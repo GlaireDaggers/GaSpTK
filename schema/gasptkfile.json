@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GaSpTK File",
+  "description": "A file containing a collection of sprite animations authored with GaSpTK",
+  "type": "object",
+  "properties": {
+    "atlas": {
+      "description": "Collection of sprite atlas definitions referenced by animations in this file",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/spriteAtlas"
+      }
+    },
+    "metadata": {
+      "description": "Information about properties which can be defined in an animation's metadata",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/metaPropInfo"
+      }
+    },
+    "event": {
+      "description": "Collection of information about events which may be triggered by animations in this file",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/eventInfo"
+      }
+    },
+    "animation": {
+      "description": "Collection of sprite animations defined in this file",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/spriteAnim"
+      }
+    }
+  },
+  "required": [],
+  "definitions": {
+    "metaPropInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "bool",
+            "string-array",
+            "number-array",
+            "bool-array",
+            "string-map",
+            "number-map",
+            "bool-map"
+          ]
+        },
+        "default": {}
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "eventInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "string",
+                  "number",
+                  "bool",
+                  "string-array",
+                  "number-array",
+                  "bool-array",
+                  "string-map",
+                  "number-map",
+                  "bool-map"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "type"
+            ]
+          }
+        },
+        "hasLocation": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "params",
+        "hasLocation"
+      ]
+    },
+    "spriteAtlas": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "sprites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "width",
+              "height"
+            ]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "path"
+      ]
+    },
+    "spriteAnim": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "integer"
+        },
+        "spriteLayers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "atlasId": {
+                "type": "string"
+              },
+              "frames": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "time": {
+                      "type": "integer"
+                    },
+                    "sprite": {
+                      "type": "integer"
+                    },
+                    "posX": {
+                      "type": "integer"
+                    },
+                    "posY": {
+                      "type": "integer"
+                    },
+                    "scaleX": {
+                      "type": "number"
+                    },
+                    "scaleY": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "time",
+                    "sprite"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "atlasId",
+              "frames"
+            ]
+          }
+        },
+        "metadata": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "time": {
+                "type": "integer"
+              },
+              "data": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "time",
+              "data"
+            ]
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "time": {
+                "type": "integer"
+              },
+              "eventId": {
+                "type": "string"
+              },
+              "params": {
+                "type": "array"
+              },
+              "location": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ]
+              }
+            },
+            "required": [
+              "time",
+              "eventId",
+              "params"
+            ]
+          }
+        },
+        "rectLayers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "groupId": {
+                "type": "string"
+              },
+              "id": {
+                "type": "integer"
+              },
+              "frames": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "time": {
+                      "type": "integer"
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "x": {
+                      "type": "integer"
+                    },
+                    "y": {
+                      "type": "integer"
+                    },
+                    "width": {
+                      "type": "integer"
+                    },
+                    "height": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "time",
+                    "active"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "groupId",
+              "id",
+              "frames"
+            ]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "duration"
+      ]
+    }
+  }
+}

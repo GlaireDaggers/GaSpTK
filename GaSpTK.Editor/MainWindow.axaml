@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="GaSpTK.Editor.MainWindow"
+        Title="GaSpTK Editor">
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New..."/>
+                <MenuItem Header="_Open..."/>
+                <MenuItem Header="_Save..."/>
+                <MenuItem Header="Save _As..."/>
+                <Separator/>
+                <MenuItem Header="_Quit"/>
+            </MenuItem>
+        </Menu>
+        <SplitView DockPanel.Dock="Bottom" IsPaneOpen="True" DisplayMode="Inline" OpenPaneLength="400" PanePlacement="Right">
+            <SplitView.Pane>
+                <TextBlock  Text="Inspector"
+                            FontSize="24"/>
+            </SplitView.Pane>
+            <Grid RowDefinitions="*, 2, 200">
+                <Canvas Grid.Row="0" Background="Gray">
+                    <TextBlock  Text="Sprite View"
+                                FontSize="24"/>
+                </Canvas>
+                <GridSplitter Grid.Row="1" Background="Black" ResizeDirection="Rows"/>
+                <Panel Grid.Row="2">
+                    <TextBlock  Text="Timeline"
+                                FontSize="24"/>
+                </Panel>
+            </Grid>
+        </SplitView>
+    </DockPanel>
+</Window>
