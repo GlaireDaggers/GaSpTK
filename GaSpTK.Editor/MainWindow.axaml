@@ -2,16 +2,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:rxui="http://reactiveui.net"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="GaSpTK.Editor.MainWindow"
         Title="GaSpTK Editor">
     <DockPanel LastChildFill="True">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_New..."/>
-                <MenuItem Header="_Open..."/>
-                <MenuItem Header="_Save..."/>
-                <MenuItem Header="Save _As..."/>
+                <MenuItem Header="_New..." Command="{Binding DoNewDocument}"/>
+                <MenuItem Header="_Open..." Command="{Binding DoOpenDocument}"/>
+                <MenuItem Header="_Save..." Command="{Binding DoSaveDocument}"/>
+                <MenuItem Header="Save _As..." Command="{Binding DoSaveDocumentAs}"/>
                 <Separator/>
                 <MenuItem Header="_Quit"/>
             </MenuItem>
