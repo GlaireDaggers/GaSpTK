@@ -5,7 +5,7 @@
         xmlns:rxui="http://reactiveui.net"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="GaSpTK.Editor.MainWindow"
-        Title="GaSpTK Editor">
+        Title="{Binding WindowTitle}">
     <DockPanel LastChildFill="True">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
@@ -17,22 +17,60 @@
                 <MenuItem Header="_Quit"/>
             </MenuItem>
         </Menu>
-        <SplitView DockPanel.Dock="Bottom" IsPaneOpen="True" DisplayMode="Inline" OpenPaneLength="400" PanePlacement="Right">
-            <SplitView.Pane>
-                <TextBlock  Text="Inspector"
-                            FontSize="24"/>
-            </SplitView.Pane>
-            <Grid RowDefinitions="*, 2, 200">
-                <Canvas Grid.Row="0" Background="Gray">
-                    <TextBlock  Text="Sprite View"
-                                FontSize="24"/>
-                </Canvas>
-                <GridSplitter Grid.Row="1" Background="Black" ResizeDirection="Rows"/>
-                <Panel Grid.Row="2">
-                    <TextBlock  Text="Timeline"
-                                FontSize="24"/>
-                </Panel>
-            </Grid>
-        </SplitView>
+        <TabControl>
+            <TabItem Header="Animations">
+                <Grid ColumnDefinitions="*, 2, 400">
+                    <Panel Grid.Column="0">
+                        <Grid RowDefinitions="*, 2, 200">
+                            <Canvas Grid.Row="0" Background="Gray">
+                                <TextBlock  Text="Sprite View"
+                                            FontSize="12"/>
+                            </Canvas>
+                            <GridSplitter Grid.Row="1" Background="Black" ResizeDirection="Rows"/>
+                            <Panel Grid.Row="2">
+                                <TextBlock  Text="Timeline"
+                                            FontSize="12"/>
+                            </Panel>
+                        </Grid>
+                    </Panel>
+                    <GridSplitter Grid.Column="1" Background="Black" ResizeDirection="Columns"/>
+                    <Panel Grid.Column="2">
+                        <TextBlock  Text="Inspector"
+                                    FontSize="12"/>
+                    </Panel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Sprites">
+                <Grid ColumnDefinitions="400, 2, *, 2, 400">
+                    <StackPanel Grid.Column="0">
+                        <Button Command="{Binding DoNewAtlas}">New Atlas</Button>
+                        <Button>Import Atlas</Button>
+                        <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
+                        <TextBlock Text="{Binding Atlas.Count, StringFormat='{}{0} sprite atlas(es)'}"/>
+                        <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
+                        <ListBox Items="{Binding Atlas}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Panel>
+                                        <TextBlock VerticalAlignment="Center" Text="{Binding Id}"/>
+                                        <Button HorizontalAlignment="Right" Command="{Binding $parent[ItemsControl].DataContext.DoDeleteAtlas}" CommandParameter="{Binding}">
+                                            Delete
+                                        </Button>
+                                    </Panel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                    <GridSplitter Grid.Column="1" Background="Black" ResizeDirection="Columns"/>
+                    <Canvas Grid.Column="2" Background="Gray">
+                    </Canvas>
+                    <GridSplitter Grid.Column="3" Background="Black" ResizeDirection="Columns"/>
+                    <Panel Grid.Column="4">
+                        <TextBlock  Text="Inspector"
+                                    FontSize="12"/>
+                    </Panel>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </DockPanel>
 </Window>

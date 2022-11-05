@@ -121,6 +121,9 @@
           "items": {
             "type": "object",
             "properties": {
+              "id": {
+                "type": "string"
+              },
               "x": {
                 "type": "integer"
               },
@@ -135,6 +138,7 @@
               }
             },
             "required": [
+              "id",
               "x",
               "y",
               "width",
@@ -173,8 +177,8 @@
                     "time": {
                       "type": "integer"
                     },
-                    "sprite": {
-                      "type": "integer"
+                    "spriteId": {
+                      "type": "string"
                     },
                     "posX": {
                       "type": "integer"
@@ -191,7 +195,7 @@
                   },
                   "required": [
                     "time",
-                    "sprite"
+                    "spriteId"
                   ]
                 }
               }
