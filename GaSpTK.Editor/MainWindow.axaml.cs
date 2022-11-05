@@ -12,6 +12,8 @@ namespace GaSpTK.Editor
 {
     public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
+        private Image _atlasPreview;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -37,6 +39,23 @@ namespace GaSpTK.Editor
                             this.Close();
                         }
                     });
+                }
+            };
+
+            _atlasPreview = this.FindControl<Image>("AtlasImage");
+
+            var atlasList = this.FindControl<ListBox>("AtlasList");
+            atlasList.SelectionChanged += (sender, e) =>
+            {
+                if (atlasList.SelectedIndex == -1)
+                {
+                    _atlasPreview.Source = null;
+                }
+                else
+                {
+                    var atlas = this.ViewModel!.ActiveDocument.Atlas[atlasList.SelectedIndex];
+                    var imgPath = System.IO.Path.Combine(this.ViewModel!.RootPath, atlas.Path);
+                    _atlasPreview.Source = BitmapLoader.Convert(imgPath);
                 }
             };
         }

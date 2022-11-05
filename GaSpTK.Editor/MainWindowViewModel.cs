@@ -58,6 +58,7 @@ namespace GaSpTK.Editor
         }
         public ObservableCollection<SpriteAtlas> Atlas { get; }
         public string WindowTitle => $"GaSpTK Editor - {_activeDocumentPath ?? "Untitled Document"} {(_unsaved ? "*" : "")}";
+        public string RootPath => System.IO.Path.GetDirectoryName(ActiveDocumentPath)!;
 
         public MainWindowViewModel()
         {
