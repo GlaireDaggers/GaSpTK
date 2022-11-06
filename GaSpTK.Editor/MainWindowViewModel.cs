@@ -17,25 +17,39 @@ namespace GaSpTK.Editor
         public Interaction<MainWindowViewModel, string?> ShowOpenDialog { get; }
         public Interaction<MainWindowViewModel, string?> ShowSaveDialog { get; }
         public Interaction<MainWindowViewModel, string?> ShowOpenImageDialog { get; }
+        public Interaction<MainWindowViewModel, string?> ShowOpenAtlasDialog { get; }
 
         public ReactiveCommand<Unit, Unit> DoNewDocument { get; }
         public ReactiveCommand<Unit, Unit> DoOpenDocument { get; }
         public ReactiveCommand<Unit, Unit> DoSaveDocument { get; }
         public ReactiveCommand<Unit, Unit> DoSaveDocumentAs { get; }
         public ReactiveCommand<Unit, Unit> DoNewAtlas { get; }
-        public ReactiveCommand<SpriteAtlas, Unit> DoDeleteAtlas { get; }
+        public ReactiveCommand<EditorSpriteAtlas, Unit> DoDeleteAtlas { get; }
+        public ReactiveCommand<Unit, Unit> DoGridSlice { get; }
+        public ReactiveCommand<Unit, Unit> DoImportAtlas { get; }
 
-        private File _activeDocument;
+        private EditorDocument _activeDocument;
+        private EditorSpriteAtlas? _activeAtlas;
         private string? _activeDocumentPath;
         private bool _unsaved;
+        private int _gridSliceRows;
+        private int _gridSliceColumns;
 
-        public File ActiveDocument
+        public EditorDocument ActiveDocument
         {
             get => _activeDocument;
             set
             {
                 this.RaiseAndSetIfChanged(ref _activeDocument, value);
                 this.RaisePropertyChanged("WindowTitle");
+            }
+        }
+        public EditorSpriteAtlas? ActiveAtlas
+        {
+            get => _activeAtlas;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _activeAtlas, value);
             }
         }
         public string? ActiveDocumentPath
@@ -56,7 +70,22 @@ namespace GaSpTK.Editor
                 this.RaisePropertyChanged("WindowTitle");
             }
         }
-        public ObservableCollection<SpriteAtlas> Atlas { get; }
+        public int GridSliceRows
+        {
+            get => _gridSliceRows;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _gridSliceRows, value);
+            }
+        }
+        public int GridSliceColumns
+        {
+            get => _gridSliceColumns;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _gridSliceColumns, value);
+            }
+        }
         public string WindowTitle => $"GaSpTK Editor - {_activeDocumentPath ?? "Untitled Document"} {(_unsaved ? "*" : "")}";
         public string RootPath => System.IO.Path.GetDirectoryName(ActiveDocumentPath)!;
 
@@ -67,6 +96,7 @@ namespace GaSpTK.Editor
             ShowOpenDialog = new Interaction<MainWindowViewModel, string?>();
             ShowSaveDialog = new Interaction<MainWindowViewModel, string?>();
             ShowOpenImageDialog = new Interaction<MainWindowViewModel, string?>();
+            ShowOpenAtlasDialog = new Interaction<MainWindowViewModel, string?>();
 
             DoNewDocument = ReactiveCommand.Create(NewDocument);
             DoOpenDocument = ReactiveCommand.CreateFromTask(() =>
@@ -85,24 +115,44 @@ namespace GaSpTK.Editor
             {
                 return NewAtlas();
             });
-            DoDeleteAtlas = ReactiveCommand.CreateFromTask((SpriteAtlas atlas) =>
+            DoDeleteAtlas = ReactiveCommand.CreateFromTask((EditorSpriteAtlas atlas) =>
             {
                 return DeleteAtlas(atlas);
             });
-
-            Atlas = new ObservableCollection<SpriteAtlas>();
+            DoGridSlice = ReactiveCommand.CreateFromTask(() =>
+            {
+                return GridSlice();
+            });
+            DoImportAtlas = ReactiveCommand.CreateFromTask(() =>
+            {
+                return ImportAtlas();
+            });
 
             _activeDocumentPath = null;
-            _activeDocument = new File();
+            _activeAtlas = null;
+            _activeDocument = new EditorDocument(new File());
             _unsaved = true;
+
+            _gridSliceRows = 1;
+            _gridSliceColumns = 1;
+
+            _activeDocument.OnModified += () =>
+            {
+                Unsaved = true;
+            };
         }
 
         public void NewDocument()
         {
-            ActiveDocument = new File();
+            ActiveDocument = new EditorDocument(new File());
+            ActiveAtlas = null;
             ActiveDocumentPath = null;
-            Atlas.Clear();
             Unsaved = true;
+
+            _activeDocument.OnModified += () =>
+            {
+                Unsaved = true;
+            };
         }
 
         public async Task OpenDocument()
@@ -130,14 +180,20 @@ namespace GaSpTK.Editor
                 }
 
                 ActiveDocumentPath = path;
-                ActiveDocument = file;
+                ActiveDocument = new EditorDocument(file);
+                ActiveAtlas = null;
                 Unsaved = false;
 
-                Atlas.Clear();
-                foreach (var atlas in file.Atlas)
+                foreach (var atlas in _activeDocument.Atlas)
                 {
-                    Atlas.Add(atlas);
+                    string fullPath = System.IO.Path.Combine(RootPath, atlas.Path);
+                    atlas.CachedBmp = BitmapLoader.Convert(fullPath);
                 }
+
+                _activeDocument.OnModified += () =>
+                {
+                    Unsaved = true;
+                };
             }
             catch (System.IO.IOException e)
             {
@@ -156,14 +212,7 @@ namespace GaSpTK.Editor
             // serialize active document
             try
             {
-                ActiveDocument.Atlas.Clear();
-                foreach (var atlas in Atlas)
-                {
-                    ActiveDocument.Atlas.Add(atlas);
-                }
-
-                string data = JsonConvert.SerializeObject(ActiveDocument);
-                await System.IO.File.WriteAllTextAsync(path, data);
+                await System.IO.File.WriteAllTextAsync(path, ActiveDocument.ToJson());
                 ActiveDocumentPath = path;
                 Unsaved = false;
             }
@@ -223,16 +272,18 @@ namespace GaSpTK.Editor
             if (imgPath != null)
             {
                 var atlas = new SpriteAtlas();
-                var rootpath = System.IO.Path.GetDirectoryName(ActiveDocumentPath) ?? throw new System.InvalidOperationException("Invalid document path");
                 atlas.Id = System.IO.Path.GetFileNameWithoutExtension(imgPath);
-                atlas.Path = System.IO.Path.GetRelativePath(rootpath, imgPath);
+                atlas.Path = System.IO.Path.GetRelativePath(RootPath, imgPath);
 
-                Atlas.Add(atlas);
+                var editorAtlas = new EditorSpriteAtlas(atlas, ActiveDocument);
+                editorAtlas.CachedBmp = BitmapLoader.Convert(imgPath);
+
+                ActiveDocument.Atlas.Add(editorAtlas);
                 Unsaved = true;
             }
         }
 
-        public async Task DeleteAtlas(SpriteAtlas atlas)
+        public async Task DeleteAtlas(EditorSpriteAtlas atlas)
         {
             var alertBox = MessageBoxManager.GetMessageBoxStandardWindow("Confirm Deletion", $"Delete atlas '{atlas.Id}'?", MessageBox.Avalonia.Enums.ButtonEnum.OkCancel,
                     MessageBox.Avalonia.Enums.Icon.Warning);
@@ -240,8 +291,143 @@ namespace GaSpTK.Editor
 
             if (buttonResult == MessageBox.Avalonia.Enums.ButtonResult.Ok)
             {
-                Atlas.Remove(atlas);
+                atlas.CachedBmp?.Dispose();
+                ActiveDocument.Atlas.Remove(atlas);
                 Unsaved = true;
+            }
+        }
+
+        public void NewSprite()
+        {
+            ActiveAtlas!.Sprites.Add(new EditorSprite(new Sprite()
+            {
+                Id = "New Sprite"
+            }, ActiveAtlas));
+            Unsaved = true;
+        }
+
+        public void DeleteSprite(EditorSprite sprite)
+        {
+            ActiveAtlas!.Sprites.Remove(sprite);
+            Unsaved = true;
+        }
+
+        public async Task GridSlice()
+        {
+            var alertBox = MessageBoxManager.GetMessageBoxStandardWindow("Confirm Operation", $"Create new sprites from grid slices? This will erase any existing sprites!", MessageBox.Avalonia.Enums.ButtonEnum.OkCancel,
+                MessageBox.Avalonia.Enums.Icon.Warning);
+            var buttonResult = await alertBox.Show();
+
+            if (buttonResult == MessageBox.Avalonia.Enums.ButtonResult.Ok)
+            {
+                ActiveAtlas!.Sprites.Clear();
+                var cellWidth = (int)(ActiveAtlas!.CachedBmp!.Size.Width / GridSliceColumns);
+                var cellHeight = (int)(ActiveAtlas!.CachedBmp!.Size.Height / GridSliceRows);
+
+                for (int j = 0; j < GridSliceRows; j++)
+                {
+                    for (int i = 0; i < GridSliceColumns; i++)
+                    {
+                        var x = i * cellWidth;
+                        var y = i * cellHeight;
+
+                        ActiveAtlas!.Sprites.Add(new EditorSprite(new Sprite()
+                        {
+                            Id = $"sprite_{i}_{j}",
+                            X = i * cellWidth,
+                            Y = j * cellHeight,
+                            Width = cellWidth,
+                            Height = cellHeight
+                        }, ActiveAtlas));
+                    }
+                }
+
+                Unsaved = true;
+            }
+        }
+
+        public async Task ImportAtlas()
+        {
+            // NOTE: in order to import a new atlas, current document must be saved
+            if (ActiveDocumentPath == null)
+            {
+                var alertBox = MessageBoxManager.GetMessageBoxStandardWindow("Save Document", "Document must be saved in order to continue", MessageBox.Avalonia.Enums.ButtonEnum.OkCancel,
+                    MessageBox.Avalonia.Enums.Icon.Info);
+                var buttonResult = await alertBox.Show();
+
+                if (buttonResult == MessageBox.Avalonia.Enums.ButtonResult.Cancel)
+                {
+                    return;
+                }
+
+                await SaveDocumentAs();
+
+                if (ActiveDocumentPath == null)
+                {
+                    return;
+                }
+            }
+
+            var atlasPath = await ShowOpenAtlasDialog.Handle(this);
+
+            if (atlasPath != null)
+            {
+                // try to load TexturePacker json hash sprite sheet
+                try
+                {
+                    var sheetJson = System.IO.File.ReadAllText(atlasPath);
+                    var texturePackerData = JsonConvert.DeserializeObject<TexturePackerFile>(sheetJson)!;
+
+                    var targetPath = System.IO.Path.GetDirectoryName(atlasPath)!;
+                    var imgPath = System.IO.Path.Combine(targetPath, texturePackerData.meta.image);
+
+                    var spriteAtlas = new SpriteAtlas();
+                    spriteAtlas.Id = System.IO.Path.GetFileNameWithoutExtension(atlasPath);
+                    spriteAtlas.Path = System.IO.Path.GetRelativePath(RootPath, imgPath);
+                    
+                    foreach (var kvp in texturePackerData.frames)
+                    {
+                        if (kvp.Value.rotated)
+                        {
+                            throw new System.NotImplementedException("Sprite rotation feature not supported");
+                        }
+
+                        if (kvp.Value.trimmed)
+                        {
+                            throw new System.NotImplementedException("Sprite trim feature not supported");
+                        }
+
+                        var sprite = new Sprite();
+                        sprite.Id = kvp.Key;
+                        sprite.X = kvp.Value.frame.x;
+                        sprite.Y = kvp.Value.frame.y;
+                        sprite.Width = kvp.Value.frame.w;
+                        sprite.Height = kvp.Value.frame.h;
+
+                        spriteAtlas.Sprites.Add(sprite);
+                    }
+
+                    var editorAtlas = new EditorSpriteAtlas(spriteAtlas, ActiveDocument);
+                    editorAtlas.CachedBmp = BitmapLoader.Convert(imgPath);
+
+                    ActiveDocument.Atlas.Add(editorAtlas);
+                    Unsaved = true;
+                }
+                catch (System.IO.IOException e)
+                {
+                    var alertBox = MessageBoxManager.GetMessageBoxStandardWindow("Error", "Failed to open file: " + e.Message);
+                    await alertBox.Show();
+                }
+                catch (Newtonsoft.Json.JsonException e)
+                {
+                    var alertBox = MessageBoxManager.GetMessageBoxStandardWindow("Corrupt/Invalid File", e.Message);
+                    await alertBox.Show();
+                }
+                catch (System.NotImplementedException e)
+                {
+                    var alertBox = MessageBoxManager.GetMessageBoxStandardWindow("Error", e.Message);
+                    await alertBox.Show();
+                }
             }
         }
     }

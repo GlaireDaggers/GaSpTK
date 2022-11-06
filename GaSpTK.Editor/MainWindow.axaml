@@ -4,9 +4,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:rxui="http://reactiveui.net"
         xmlns:local="clr-namespace:GaSpTK.Editor;assembly=GaSpTK.Editor"
+        xmlns:paz="using:Avalonia.Controls.PanAndZoom"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="GaSpTK.Editor.MainWindow"
         Title="{Binding WindowTitle}">
+    <Window.Styles>
+        <Style Selector="#AtlasRects > ContentPresenter">
+            <Setter Property="Canvas.Left" Value="{Binding X}" />
+            <Setter Property="Canvas.Top" Value="{Binding Y}" />
+            <Setter Property="Width" Value="{Binding Width}" />
+            <Setter Property="Height" Value="{Binding Height}" />
+        </Style>
+    </Window.Styles>
     <DockPanel LastChildFill="True">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
@@ -44,12 +53,14 @@
             <TabItem Header="Sprites">
                 <Grid ColumnDefinitions="400, 2, *, 2, 400">
                     <StackPanel Grid.Column="0">
-                        <Button Command="{Binding DoNewAtlas}">New Atlas</Button>
-                        <Button>Import Atlas</Button>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Command="{Binding DoNewAtlas}">New Atlas</Button>
+                            <Button Command="{Binding DoImportAtlas}">Import Atlas</Button>
+                        </StackPanel>
                         <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
-                        <TextBlock Text="{Binding Atlas.Count, StringFormat='{}{0} sprite atlas(es)'}"/>
+                        <TextBlock Text="{Binding ActiveDocument.Atlas.Count, StringFormat='{}{0} sprite atlas(es)'}"/>
                         <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
-                        <ListBox Name="AtlasList" Items="{Binding Atlas}">
+                        <ListBox Name="AtlasList" Items="{Binding ActiveDocument.Atlas}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Panel>
@@ -63,14 +74,72 @@
                         </ListBox>
                     </StackPanel>
                     <GridSplitter Grid.Column="1" Background="Black" ResizeDirection="Columns"/>
-                    <Canvas Grid.Column="2" Background="Gray">
-                        <Image Name="AtlasImage"/>
-                    </Canvas>
-                    <GridSplitter Grid.Column="3" Background="Black" ResizeDirection="Columns"/>
-                    <Panel Grid.Column="4">
-                        <TextBlock  Text="Inspector"
-                                    FontSize="12"/>
+                    <Panel Grid.Column="2" Background="Gray">
+                        <paz:ZoomBorder Name="AtlasZoomBorder" Stretch="None" ZoomSpeed="1.2"
+                            ClipToBounds="True" Focusable="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <Canvas>
+                                <Image Name="AtlasImage" RenderOptions.BitmapInterpolationMode="Default"/>
+                                <ItemsControl Name="AtlasRects" ClipToBounds="False" Items="{Binding ActiveAtlas.Sprites}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas/>               
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="Yellow" BorderThickness="1" Width="{Binding Width}" Height="{Binding Height}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Canvas>
+                        </paz:ZoomBorder>
                     </Panel>
+                    <GridSplitter Grid.Column="3" Background="Black" ResizeDirection="Columns"/>
+                    <ScrollViewer Grid.Column="4">
+                        <Panel>
+                            <StackPanel Name="AtlasInspector" IsVisible="False" Margin="0 0 20 0">
+                                <Grid ColumnDefinitions="80, *, 80, *">
+                                    <TextBlock Margin="2 2 2 2" Grid.Column="0" VerticalAlignment="Center">Rows</TextBlock>
+                                    <NumericUpDown Name="GridSliceRows" Margin="2 2 2 2" Grid.Column="1" Value="{Binding GridSliceRows}" Minimum="1"/>
+                                    <TextBlock Margin="2 2 2 2" Grid.Column="2" VerticalAlignment="Center">Columns</TextBlock>
+                                    <NumericUpDown Name="GridSliceColumns" Margin="2 2 2 2" Grid.Column="3" Value="{Binding GridSliceColumns}" Minimum="1"/>
+                                </Grid>
+                                <Button Command="{Binding DoGridSlice}">Create From Grid</Button>
+                                <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
+                                <Button Command="{Binding NewSprite}">New Sprite</Button>
+                                <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
+                                <TextBlock Text="{Binding ActiveAtlas.Sprites.Count, StringFormat='{}{0} sprite(s)'}"/>
+                                <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
+                                <StackPanel>
+                                    <ItemsRepeater Items="{Binding ActiveAtlas.Sprites}">
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel>
+                                                    <TextBox Text="{Binding Id}"/>
+                                                    <Grid ColumnDefinitions="50, *, 50, *">
+                                                        <TextBlock Margin="2 2 2 2" Grid.Column="0" VerticalAlignment="Center">x</TextBlock>
+                                                        <NumericUpDown Margin="2 2 2 2" Grid.Column="1" Value="{Binding X}" Minimum="0"/>
+                                                        <TextBlock Margin="2 2 2 2" Grid.Column="2" VerticalAlignment="Center">y</TextBlock>
+                                                        <NumericUpDown Margin="2 2 2 2" Grid.Column="3" Value="{Binding Y}" Minimum="0"/>
+                                                    </Grid>
+                                                    <Grid ColumnDefinitions="50, *, 50, *">
+                                                        <TextBlock Margin="2 2 2 2" Grid.Column="0" VerticalAlignment="Center">width</TextBlock>
+                                                        <NumericUpDown Margin="2 2 2 2" Grid.Column="1" Value="{Binding Width}" Minimum="0"/>
+                                                        <TextBlock Margin="2 2 2 2" Grid.Column="2" VerticalAlignment="Center">height</TextBlock>
+                                                        <NumericUpDown Margin="2 2 2 2" Grid.Column="3" Value="{Binding Height}" Minimum="0"/>
+                                                    </Grid>
+                                                    <Button HorizontalAlignment="Right" Command="{Binding $parent[ItemsControl].DataContext.DeleteSprite}" CommandParameter="{Binding}">Delete</Button>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Name="AtlasInspectorFallback" IsVisible="True">
+                                <TextBlock Text="No atlas selected"/>
+                            </StackPanel>
+                        </Panel>
+                    </ScrollViewer>
                 </Grid>
             </TabItem>
         </TabControl>

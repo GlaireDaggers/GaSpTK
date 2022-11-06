@@ -1,6 +1,9 @@
 using Avalonia.Controls;
+using Avalonia.Controls.PanAndZoom;
 using Avalonia.ReactiveUI;
 using Avalonia.Threading;
+using Avalonia.Interactivity;
+using Avalonia.Input;
 using ReactiveUI;
 using MessageBox.Avalonia;
 using GaSpTK.Schema;
@@ -20,6 +23,7 @@ namespace GaSpTK.Editor
             this.WhenActivated(d => d(ViewModel!.ShowOpenDialog.RegisterHandler(DoShowOpenDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowSaveDialog.RegisterHandler(DoShowSaveDialogAsync)));
             this.WhenActivated(d => d(ViewModel!.ShowOpenImageDialog.RegisterHandler(DoShowOpenImageDialogAsync)));
+            this.WhenActivated(d => d(ViewModel!.ShowOpenAtlasDialog.RegisterHandler(DoShowOpenAtlasDialogAsync)));
             this.Closing += (sender, args) =>
             {
                 if (ViewModel!.Unsaved)
@@ -43,19 +47,30 @@ namespace GaSpTK.Editor
             };
 
             _atlasPreview = this.FindControl<Image>("AtlasImage");
-
             var atlasList = this.FindControl<ListBox>("AtlasList");
+            var atlasInspector = this.FindControl<Control>("AtlasInspector");
+            var atlasInspectorFallback = this.FindControl<Control>("AtlasInspectorFallback");
+
             atlasList.SelectionChanged += (sender, e) =>
             {
                 if (atlasList.SelectedIndex == -1)
                 {
                     _atlasPreview.Source = null;
+                    atlasInspector.IsVisible = false;
+                    atlasInspectorFallback.IsVisible = true;
+
+                    ViewModel!.ActiveAtlas = null;
                 }
                 else
                 {
                     var atlas = this.ViewModel!.ActiveDocument.Atlas[atlasList.SelectedIndex];
                     var imgPath = System.IO.Path.Combine(this.ViewModel!.RootPath, atlas.Path);
-                    _atlasPreview.Source = BitmapLoader.Convert(imgPath);
+                    _atlasPreview.Source = atlas.CachedBmp;
+
+                    atlasInspector.IsVisible = true;
+                    atlasInspectorFallback.IsVisible = false;
+
+                    ViewModel!.ActiveAtlas = atlas;
                 }
             };
         }
@@ -71,6 +86,34 @@ namespace GaSpTK.Editor
             extension.Add("json");
             filter.Extensions = extension;
             filter.Name = "GaSp Sprite Files";
+            filters.Add(filter);
+            openDialog.Filters = filters;
+
+            var files = await openDialog.ShowAsync(this);
+
+            if (files != null && files.Length > 0)
+            {
+                interactionContext.SetOutput(files[0]);
+                return;
+            }
+
+            interactionContext.SetOutput(null);
+            return;
+        }
+
+        private async Task DoShowOpenAtlasDialogAsync(InteractionContext<MainWindowViewModel, string?> interactionContext)
+        {
+            var openDialog = new OpenFileDialog();
+            openDialog.Title = "Open TexturePacker Sheet";
+            openDialog.Directory = interactionContext.Input.ActiveDocumentPath == null ? System.Environment.CurrentDirectory :
+                System.IO.Path.GetDirectoryName(interactionContext.Input.ActiveDocumentPath);
+                
+            List<FileDialogFilter> filters = new List<FileDialogFilter>();
+            FileDialogFilter filter = new FileDialogFilter();
+            List<string> extension = new List<string>();
+            extension.Add("json");
+            filter.Extensions = extension;
+            filter.Name = "TexturePacker sheet (json hash)";
             filters.Add(filter);
             openDialog.Filters = filters;
 
