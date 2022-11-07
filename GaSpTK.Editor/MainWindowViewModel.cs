@@ -30,6 +30,7 @@ namespace GaSpTK.Editor
 
         private EditorDocument _activeDocument;
         private EditorSpriteAtlas? _activeAtlas;
+        private EditorAnimation? _activeAnim;
         private string? _activeDocumentPath;
         private bool _unsaved;
         private int _gridSliceRows;
@@ -50,6 +51,14 @@ namespace GaSpTK.Editor
             set
             {
                 this.RaiseAndSetIfChanged(ref _activeAtlas, value);
+            }
+        }
+        public EditorAnimation? ActiveAnim
+        {
+            get => _activeAnim;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _activeAnim, value);
             }
         }
         public string? ActiveDocumentPath
@@ -130,6 +139,7 @@ namespace GaSpTK.Editor
 
             _activeDocumentPath = null;
             _activeAtlas = null;
+            _activeAnim = null;
             _activeDocument = new EditorDocument(new File());
             _unsaved = true;
 
@@ -146,6 +156,7 @@ namespace GaSpTK.Editor
         {
             ActiveDocument = new EditorDocument(new File());
             ActiveAtlas = null;
+            ActiveAnim = null;
             ActiveDocumentPath = null;
             Unsaved = true;
 
@@ -182,6 +193,7 @@ namespace GaSpTK.Editor
                 ActiveDocumentPath = path;
                 ActiveDocument = new EditorDocument(file);
                 ActiveAtlas = null;
+                ActiveAnim = null;
                 Unsaved = false;
 
                 foreach (var atlas in _activeDocument.Atlas)
@@ -429,6 +441,15 @@ namespace GaSpTK.Editor
                     await alertBox.Show();
                 }
             }
+        }
+
+        public void NewAnim()
+        {
+            var anim = new SpriteAnim();
+            anim.Id = "New Animation";
+
+            ActiveDocument.Animation.Add(new EditorAnimation(anim, ActiveDocument));
+            Unsaved = true;
         }
     }
 }

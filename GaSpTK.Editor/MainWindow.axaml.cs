@@ -73,6 +73,20 @@ namespace GaSpTK.Editor
                     ViewModel!.ActiveAtlas = atlas;
                 }
             };
+
+            var animList = this.FindControl<ListBox>("AnimList");
+
+            animList.SelectionChanged += (sender, e) =>
+            {
+                if (animList.SelectedIndex == -1)
+                {
+                    ViewModel!.ActiveAnim = null;
+                }
+                else
+                {
+                    ViewModel!.ActiveAnim = ViewModel.ActiveDocument.Animation[animList.SelectedIndex];
+                }
+            };
         }
 
         private async Task DoShowOpenDialogAsync(InteractionContext<MainWindowViewModel, string?> interactionContext)
@@ -107,7 +121,7 @@ namespace GaSpTK.Editor
             openDialog.Title = "Open TexturePacker Sheet";
             openDialog.Directory = interactionContext.Input.ActiveDocumentPath == null ? System.Environment.CurrentDirectory :
                 System.IO.Path.GetDirectoryName(interactionContext.Input.ActiveDocumentPath);
-                
+
             List<FileDialogFilter> filters = new List<FileDialogFilter>();
             FileDialogFilter filter = new FileDialogFilter();
             List<string> extension = new List<string>();

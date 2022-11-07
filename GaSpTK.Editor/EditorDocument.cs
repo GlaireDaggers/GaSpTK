@@ -32,7 +32,7 @@ namespace GaSpTK.Editor
         /// <summary>
         /// Collection of sprite animations defined in this file
         /// </summary>
-        public ObservableCollection<SpriteAnim> Animation { get; set; }
+        public ObservableCollection<EditorAnimation> Animation { get; set; }
 
         /// <summary>
         /// Collection of sprite atlas definitions referenced by animations in this file
@@ -51,14 +51,14 @@ namespace GaSpTK.Editor
 
         public EditorDocument(File file) : base()
         {
-            Animation = new ObservableCollection<SpriteAnim>();
+            Animation = new ObservableCollection<EditorAnimation>();
             Atlas = new ObservableCollection<EditorSpriteAtlas>();
             Event = new ObservableCollection<EventInfo>();
             Metadata = new ObservableCollection<MetaPropInfo>();
 
             foreach (var anim in file.Animation)
             {
-                Animation.Add(anim);
+                Animation.Add(new EditorAnimation(anim, this));
             }
 
             foreach (var atlas in file.Atlas)
@@ -83,7 +83,7 @@ namespace GaSpTK.Editor
 
             foreach (var anim in Animation)
             {
-                f.Animation.Add(anim);
+                f.Animation.Add(anim.ToSpriteAnim());
             }
 
             foreach (var atlas in Atlas)
@@ -223,6 +223,101 @@ namespace GaSpTK.Editor
                 atlas.Sprites.Add(sprite.ToSprite());
             }
             return atlas;
+        }
+    }
+
+    public abstract class EditorTrack<TData> : EditorObject
+    {
+        public struct Keyframe
+        {
+            public int frame;
+            public TData data;
+        }
+
+        public ObservableCollection<Keyframe> keyframes = new ObservableCollection<Keyframe>();
+
+        public EditorTrack(EditorAnimation parent) : base(parent)
+        {
+            keyframes.CollectionChanged += (sender, e) =>
+            {
+                this.RaiseModified();
+            };
+        }
+
+        public void Insert(int frame, TData data)
+        {
+            Keyframe newKeyframe = new Keyframe
+            {
+                frame = frame,
+                data = data
+            };
+
+            for (int i = 0; i < keyframes.Count; i++)
+            {
+                if (keyframes[i].frame > frame)
+                {
+                    keyframes.Insert(i, newKeyframe);
+                    break;
+                }
+                else if (keyframes[i].frame == frame)
+                {
+                    keyframes[i] = newKeyframe;
+                    break;
+                }
+            }
+
+            keyframes.Add(newKeyframe);
+        }
+    }
+
+    public class EditorSpriteTrack : EditorTrack<EditorSpriteTrack.Data>
+    {
+        public struct Data
+        {
+            public string atlasId;
+            public string spriteId;
+        }
+
+        public EditorSpriteTrack(EditorAnimation parent) : base(parent)
+        {
+        }
+    }
+
+    public class EditorAnimation : EditorObject
+    {
+        private string _id = "";
+
+        public string Id
+        {
+            get => _id;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _id, value);
+                this.RaiseModified();
+            }
+        }
+
+        public ObservableCollection<EditorSpriteTrack> SpriteTracks = new ObservableCollection<EditorSpriteTrack>();
+
+        public EditorAnimation(EditorDocument doc) : base(doc)
+        {
+            SpriteTracks.CollectionChanged += (sender, e) =>
+            {
+                RaiseModified();
+            };
+        }
+
+        public EditorAnimation(SpriteAnim anim, EditorDocument doc) : base(doc)
+        {
+            _id = anim.Id;
+        }
+
+        public SpriteAnim ToSpriteAnim()
+        {
+            var anim = new SpriteAnim();
+            anim.Id = _id;
+
+            return anim;
         }
     }
 }

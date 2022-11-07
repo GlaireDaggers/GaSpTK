@@ -29,8 +29,27 @@
         </Menu>
         <TabControl>
             <TabItem Header="Animations">
-                <Grid ColumnDefinitions="*, 2, 400">
-                    <Panel Grid.Column="0">
+                <Grid ColumnDefinitions="400, 2, *, 2, 400">
+                    <StackPanel Grid.Column="0">
+                        <Button Command="{Binding NewAnim}">New Animation</Button>
+                        <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
+                        <TextBlock Text="{Binding ActiveDocument.Animation.Count, StringFormat='{}{0} animation(s)'}"/>
+                        <Rectangle HorizontalAlignment="Stretch" Fill="Gray" Height="2" Margin="0 10 0 10"/>
+                        <ListBox Name="AnimList" Items="{Binding ActiveDocument.Animation}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*, 60">
+                                        <TextBox Grid.Column="0" VerticalAlignment="Center" Text="{Binding Id}"/>
+                                        <Button HorizontalAlignment="Right" Grid.Column="1">
+                                            Delete
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                    <GridSplitter Grid.Column="1" Background="Black" ResizeDirection="Columns"/>
+                    <Panel Grid.Column="2">
                         <Grid RowDefinitions="*, 2, 200">
                             <Canvas Grid.Row="0" Background="Gray">
                                 <TextBlock  Text="Sprite View"
@@ -38,13 +57,48 @@
                             </Canvas>
                             <GridSplitter Grid.Row="1" Background="Black" ResizeDirection="Rows"/>
                             <Panel Grid.Row="2">
-                                <TextBlock  Text="Timeline"
-                                            FontSize="12"/>
+                                <Grid RowDefinitions="32, *">
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                        <Button>New Sprite Track</Button>
+                                        <Button>New Rect Track</Button>
+                                    </StackPanel>
+                                    <ScrollViewer Grid.Row="1">
+                                        <Grid ColumnDefinitions="200, *">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Height="24" Text="Event Track"/>
+                                                <TextBlock Height="24" Text="Meta Track"/>
+                                                <TextBlock Height="24" Text="Sprite Track 0"/>
+                                                <TextBlock Height="24" Text="Sprite Track 1"/>
+                                                <TextBlock Height="24" Text="Sprite Track 2"/>
+                                                <TextBlock Height="24" Text="Rect Track 0"/>
+                                                <TextBlock Height="24" Text="Rect Track 1"/>
+                                                <TextBlock Height="24" Text="Rect Track 2"/>
+                                            </StackPanel>
+                                            <local:TimelinePanel MaxTime="64" Background="DimGray" Fill="Gray" LineInterval="4" TimeScale="8" Grid.Column="1">
+                                                <StackPanel>
+                                                    <Canvas Height="24">
+                                                        <Ellipse Fill="White" Stroke="Black" Canvas.Left="-4" Canvas.Top="8" Width="8" Height="8"/>
+                                                        <Ellipse Fill="White" Stroke="Black" Canvas.Left="124" Canvas.Top="8" Width="8" Height="8"/>
+                                                        <Ellipse Fill="White" Stroke="Black" Canvas.Left="156" Canvas.Top="8" Width="8" Height="8"/>
+                                                        <Ellipse Fill="White" Stroke="Black" Canvas.Left="252" Canvas.Top="8" Width="8" Height="8"/>
+                                                    </Canvas>
+                                                    <TextBlock Height="24" Text=""/>
+                                                    <TextBlock Height="24" Text=""/>
+                                                    <TextBlock Height="24" Text=""/>
+                                                    <TextBlock Height="24" Text=""/>
+                                                    <TextBlock Height="24" Text=""/>
+                                                    <TextBlock Height="24" Text=""/>
+                                                    <TextBlock Height="24" Text=""/>
+                                                </StackPanel>
+                                            </local:TimelinePanel>
+                                        </Grid>
+                                    </ScrollViewer>
+                                </Grid>
                             </Panel>
                         </Grid>
                     </Panel>
-                    <GridSplitter Grid.Column="1" Background="Black" ResizeDirection="Columns"/>
-                    <Panel Grid.Column="2">
+                    <GridSplitter Grid.Column="3" Background="Black" ResizeDirection="Columns"/>
+                    <Panel Grid.Column="4">
                         <TextBlock  Text="Inspector"
                                     FontSize="12"/>
                     </Panel>
